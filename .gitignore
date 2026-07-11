@@ -1,0 +1,23 @@
+# Maven Build Output
+target/
+*.jar
+*.war
+*.ear
+
+# H2 Local Database files
+data/
+*.db
+
+# IDE and Editor Files
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# Log and OS files
+*.log
+.DS_Store
+Thumbs.db

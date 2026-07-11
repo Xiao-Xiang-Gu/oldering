@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星空茶會 - 跟團點餐</title>
+  <meta name="description" content="多人在線即時飲料揪團點餐系統。">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 已移除多角色開發模擬控制列 -->
+
+  <div class="container">
+    <!-- 標題 Header -->
+    <header>
+      <h1 id="logo-title" style="cursor: pointer;">🌌 星空茶會 Starry Tea Party</h1>
+      <p>辦公室揪團、聚會點飲料最貼心的即時點餐系統 (跟團者專屬頁面)</p>
+    </header>
+
+    <!-- 🔒 尚未開放跟團提示遮罩 (當房間為 private 時) -->
+    <div id="private-lock-overlay" class="glass-panel" style="display: none; max-width: 600px; margin: 40px auto; text-align: center; padding: 40px 20px;">
+      <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
+      <h2 style="color: var(--secondary); margin-bottom: 15px;">主揪正在選取餐點，尚未開放跟團</h2>
+      <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 25px;">請稍候，一旦主揪確認好餐點並開放，本頁面將會自動重新載入並為您解鎖！</p>
+      <div class="loading-dots" style="font-size: 14px; color: var(--primary);">連線同步中...</div>
+    </div>
+
+    <!-- 揪團房間 (Room) 區塊 -->
+    <section id="room-section" class="room-section" style="display: none;">
+      <!-- 頂部資訊與共用動作 -->
+      <div class="glass-panel">
+        <div class="info-header">
+          <div class="room-title-block">
+            <h2 id="room-store-name">店家名稱</h2>
+            <div id="room-id-text" class="store-name-sub">房間號：G-xxxx</div>
+          </div>
+          <div class="room-actions">
+            <div class="share-link-box">
+              <span id="share-link-display">正在獲取分享連結...</span>
+              <button id="btn-copy-link" class="btn-icon" title="複製連結">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 外送門檻進度條 -->
+        <div class="progress-panel">
+          <div class="progress-header">
+            <span>外送門檻進度</span>
+            <span id="progress-hint-display">計算中...</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+          </div>
+          <div class="progress-header" style="font-size:12px; color:var(--text-muted);">
+            <span>目前金額：<strong id="progress-total-display">$0</strong></span>
+            <span>外送門檻：<strong id="progress-min-display">$300</strong></span>
+          </div>
+        </div>
+
+        <!-- 揪團進度時間軸 -->
+        <div id="timeline-container" class="timeline">
+          <!-- 狀態步驟由 Javascript 動態載入 -->
+        </div>
+      </div>
+
+      <div class="room-layout">
+        <!-- 左側：菜單面板 -->
+        <div id="menu-panel" class="glass-panel">
+          <h3 style="font-size:1.4rem; margin-bottom:20px; color:#fff; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">📖 菜單選單</h3>
+          <div id="menu-items-container">
+            <!-- 菜單由 JavaScript 載入 -->
+          </div>
+        </div>
+
+        <!-- 右側：購物車與成員狀態 -->
+        <div class="right-sidebar">
+          
+          <!-- 個人購物車面板 -->
+          <div id="cart-panel" class="sidebar-panel">
+            <div class="sidebar-title">
+              <span>🛒 個人購物車</span>
+            </div>
+
+            <!-- 我的名字編輯區 -->
+            <div class="my-nickname-container" style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.02);">
+              <span style="font-size: 13px; color: var(--text-muted); flex-shrink: 0;">我的姓名:</span>
+              <input type="text" id="my-name-input" class="input-field" style="margin: 0; padding: 4px 8px; font-size: 13px; height: auto;" placeholder="輸入暱稱" />
+              <button id="btn-update-name" class="btn-primary" style="padding: 5px 10px; font-size: 12px; height: auto; flex-shrink: 0;">更新</button>
+            </div>
+            
+            <!-- 購物車鎖定時的覆蓋訊息 -->
+            <div id="cart-locked-overlay" style="display: none;"></div>
+            
+            <!-- 購物車未鎖定時的內容 -->
+            <div id="cart-active-content">
+              <div id="cart-list" class="cart-list">
+                <!-- 購物車品項由 JavaScript 載入 -->
+              </div>
+              <div class="cart-total-bar">
+                <span>合計金額</span>
+                <span id="cart-total-price">$0</span>
+              </div>
+              <button id="btn-submit-cart" class="btn-primary btn-full" style="justify-content: center;">確認提交 (鎖定購物車)</button>
+            </div>
+          </div>
+
+          <!-- 跟團成員提交狀態面板 -->
+          <div id="members-panel" class="sidebar-panel">
+            <div class="sidebar-title">
+              <span id="member-count-title">跟團成員 (0 人)</span>
+            </div>
+            <div id="member-list-container" class="member-list">
+              <!-- 成員狀態列表由 JavaScript 載入 -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 大總覽 (跟團者在結單後可見) -->
+      <div id="total-summary-panel" class="total-summary-panel" style="display: none;">
+        <div class="summary-title">
+          <span>📋 總訂單統計 (明細匯整)</span>
+          <span id="summary-grand-qty" style="font-size:14px; background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:20px;">0 杯</span>
+        </div>
+        
+        <div style="overflow-x:auto;">
+          <table class="summary-table">
+            <thead>
+              <tr>
+                <th>品項與客製化細節</th>
+                <th>數量</th>
+                <th>單價</th>
+                <th style="text-align:right;">小計</th>
+              </tr>
+            </thead>
+            <tbody id="summary-table-body">
+              <!-- 彙整資料由 JavaScript 載入 -->
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" style="text-align:right; font-weight:600; padding:8px 15px; font-size:14px; border:none;">商品小計：</td>
+                <td id="summary-subtotal-price" style="text-align:right; font-weight:600; font-size:16px; color:var(--text); padding:8px 15px; border:none;">$0</td>
+              </tr>
+              <tr id="summary-low-subsidy-row" style="display:none;">
+                <td colspan="3" style="text-align:right; font-weight:600; padding:8px 15px; font-size:14px; border:none; color:var(--secondary);">未達低消差額補貼：</td>
+                <td id="summary-low-subsidy" style="text-align:right; font-weight:600; font-size:16px; color:var(--secondary); padding:8px 15px; border:none;">$0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:right; font-weight:600; padding:8px 15px; font-size:14px; border:none;">外送運費 (<span id="summary-delivery-distance">0.0</span> 公里)：</td>
+                <td id="summary-delivery-fee" style="text-align:right; font-weight:600; font-size:16px; color:var(--text); padding:8px 15px; border:none;">$0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:right; font-weight:700; padding:12px 15px; font-size:16px;">實付總計：</td>
+                <td id="summary-grand-total" style="text-align:right; font-weight:800; font-size:22px; color:var(--accent); padding:12px 15px;">$0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 客製化彈窗 (Modal) -->
+  <div id="custom-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-block">
+          <h3 id="modal-prod-name">經典波霸奶茶</h3>
+          <p id="modal-prod-desc">香濃奶茶配上手煮波霸</p>
+        </div>
+        <button id="modal-close-btn" class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      
+      <!-- 客製化選項區 (動態由 JS 渲染) -->
+      <div id="modal-custom-options">
+        <!-- 選項內容 -->
+      </div>
+      
+      <!-- 數量選擇器 -->
+      <div class="quantity-selector">
+        <span style="font-weight:600; font-size:14px;">數量</span>
+        <div style="display:flex; align-items:center; gap:12px; margin-left:auto;">
+          <button id="btn-qty-minus" class="qty-btn" aria-label="Decrease quantity">&minus;</button>
+          <span id="modal-qty-text" class="qty-value">1</span>
+          <button id="btn-qty-plus" class="qty-btn" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <div>
+          <span style="display:block; font-size:11px; color:var(--text-muted);">目前小計</span>
+          <span id="modal-total-price" class="modal-total-price">$0</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button id="modal-cancel-btn" class="btn-secondary">取消</button>
+          <button id="modal-add-btn" class="btn-primary">加入購物車</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 訊息通知框 -->
+  <div id="toast" class="toast">📢 訊息通知</div>
+
+  <!-- Javascript 資源 -->
+  <script src="join.js"></script>
+</body>
+</html>
